@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dear Stranger — One letter in. One letter out.",
+  title: "A QUIET EXCHANGE?",
   description:
     "Share something life has taught you and receive a heartfelt letter from a stranger tomorrow.",
   icons: {

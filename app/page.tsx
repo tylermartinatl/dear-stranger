@@ -191,7 +191,7 @@ export default function Home() {
   return (
     <main className="homepage">
       <header className="homepage-header">
-        <h1>Dear Stranger,</h1>
+        <h1>A QUIET EXCHANGE?</h1>
         <button className="about-link" onClick={() => setAboutOpen(true)}>
           About
         </button>

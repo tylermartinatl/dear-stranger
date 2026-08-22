@@ -29,8 +29,8 @@ test("server-renders the Dear Stranger writing surface", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Dear Stranger/);
-  assert.match(html, /<h1>Dear Stranger,<\/h1>/);
+  assert.match(html, /<title>A QUIET EXCHANGE\?<\/title>/);
+  assert.match(html, /<h1>A QUIET EXCHANGE\?<\/h1>/);
   assert.match(html, /aria-label="Interactive virtual typewriter"/);
   assert.match(html, /aria-label="Type your letter"/);
   assert.match(html, /typewriter-carriage-bed\.png/);
