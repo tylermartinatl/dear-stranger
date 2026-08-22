@@ -179,8 +179,7 @@ export default function Home() {
         backspace();
       } else if (event.key.length === 1) {
         event.preventDefault();
-        const character = event.key === " " ? " " : event.key.toUpperCase();
-        typeCharacter(character);
+        typeCharacter(event.key);
       }
     };
 
@@ -217,11 +216,7 @@ export default function Home() {
           onChange={(event) => {
             for (const inputCharacter of event.currentTarget.value) {
               if (inputCharacter === "\n") carriageReturn();
-              else {
-                const character =
-                  inputCharacter === " " ? " " : inputCharacter.toUpperCase();
-                typeCharacter(character);
-              }
+              else typeCharacter(inputCharacter);
             }
           }}
           onKeyDown={(event) => {

@@ -69,6 +69,9 @@ test("packages the validated raster stack and physical typing geometry", async (
   assert.match(page, /new Audio\("\/typewriter-key\.mp3"\)/);
   assert.match(page, /setStrikeId\(\(previous\) => previous \+ 1\)/);
   assert.match(page, /if \(character !== " "\) strike\(\)/);
+  assert.match(page, /typeCharacter\(event\.key\)/);
+  assert.match(page, /typeCharacter\(inputCharacter\)/);
+  assert.doesNotMatch(page, /toUpperCase\(\)/);
   assert.match(page, /playCarriageReturnSound\(\)/);
   assert.doesNotMatch(page, /actionQueue|STRIKE_DURATION|await strike\(\)/);
   assert.doesNotMatch(layout, /next\/font/);
