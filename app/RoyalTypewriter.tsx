@@ -13,13 +13,16 @@ type RoyalTypewriterProps = {
 
 type TypewriterStyle = CSSProperties & {
   "--carriage-x": string;
+  "--paper-left": string;
+  "--paper-margin": string;
+  "--paper-width": string;
   "--paper-y": string;
 };
 
 const CANVAS_WIDTH = 1536;
 const IMPACT_X = 773;
-const PAPER_LEFT = CANVAS_WIDTH * 0.33;
-const PAPER_WIDTH = CANVAS_WIDTH * 0.4;
+const PAPER_LEFT = CANVAS_WIDTH * 0.3;
+const PAPER_WIDTH = CANVAS_WIDTH * 0.46;
 const PRINTABLE_REFERENCE_WIDTH = CANVAS_WIDTH * 0.34;
 const ORIGINAL_MARGIN = PRINTABLE_REFERENCE_WIDTH * 0.14;
 const PRINTABLE_WIDTH = PRINTABLE_REFERENCE_WIDTH - ORIGINAL_MARGIN * 2;
@@ -64,6 +67,9 @@ export default function RoyalTypewriter({
   const activeLineIndex = Math.max(lines.length - 1, 0);
   const typewriterStyle: TypewriterStyle = {
     "--carriage-x": `${(carriageX / CANVAS_WIDTH) * 100}%`,
+    "--paper-left": `${(PAPER_LEFT / CANVAS_WIDTH) * 100}%`,
+    "--paper-margin": `${(PAPER_MARGIN / CANVAS_WIDTH) * 100}cqi`,
+    "--paper-width": `${(PAPER_WIDTH / CANVAS_WIDTH) * 100}%`,
     "--paper-y": `${((-activeLineIndex * LINE_FEED) / CANVAS_WIDTH) * 100}cqi`,
   };
 

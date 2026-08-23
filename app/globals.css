@@ -155,14 +155,14 @@ button {
 
 .typewriter-paper-wrap {
   z-index: 20;
-  clip-path: inset(8% 25% 70% 31%);
+  clip-path: inset(8% 22% 70% 28%);
 }
 
 .typewriter-paper {
   position: absolute;
   top: 8%;
-  left: 33%;
-  width: 40%;
+  left: var(--paper-left);
+  width: var(--paper-width);
   height: 22%;
   overflow: hidden;
   color: #242220;
@@ -185,7 +185,7 @@ button {
 
 .typewriter-paper-line {
   position: absolute;
-  left: 7.760cqi;
+  left: var(--paper-margin);
   margin: 0;
   white-space: pre;
   font-family: "Courier New", Courier, monospace;
