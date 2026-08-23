@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import RoyalTypewriter from "./RoyalTypewriter";
 
 const CHARACTERS_PER_LINE = 42;
+const WORD_START_GUARD_COLUMNS = 9;
 const CARRIAGE_STEP_DURATION = 64;
 const CARRIAGE_RETURN_DURATION = 470;
+const QUEUED_CHARACTER_INTERVAL = 42;
 const KEY_AUDIO_POOL_SIZE = 10;
 
 type ReturnSoundStep = {
@@ -31,10 +33,20 @@ export default function Home() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const linesRef = useRef<string[]>([""]);
   const columnRef = useRef(0);
+  const returningRef = useRef(false);
+  const queuedCharactersRef = useRef<string[]>([]);
+  const drainingQueueRef = useRef(false);
+  const typeCharacterRef = useRef<(character: string, fromQueue?: boolean) => void>(
+    () => undefined,
+  );
+  const drainQueuedCharactersRef = useRef<() => void>(() => undefined);
   const keyAudioPool = useRef<HTMLAudioElement[]>([]);
   const keyAudioIndex = useRef(0);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const queuedCharacterTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const returnSoundTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const publishLines = useCallback((next: string[]) => {
@@ -89,9 +101,12 @@ export default function Home() {
   }, [playKeySound]);
 
   const carriageReturn = useCallback(() => {
+    if (returningRef.current) return;
+
     const next = [...linesRef.current, ""];
     publishLines(next);
     columnRef.current = 0;
+    returningRef.current = true;
     setAdvancing(false);
     setReturning(true);
     setCarriagePosition(0);
@@ -100,20 +115,50 @@ export default function Home() {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     if (returnTimer.current) clearTimeout(returnTimer.current);
     returnTimer.current = setTimeout(
-      () => setReturning(false),
+      () => {
+        returningRef.current = false;
+        setReturning(false);
+        drainQueuedCharactersRef.current();
+      },
       CARRIAGE_RETURN_DURATION,
     );
   }, [playCarriageReturnSound, publishLines]);
 
   const typeCharacter = useCallback(
-    (character: string) => {
+    (character: string, fromQueue = false) => {
       if (!character) return;
 
-      const wrapped = columnRef.current >= CHARACTERS_PER_LINE;
-      if (wrapped) carriageReturn();
-      else {
-        setReturning(false);
-        if (returnTimer.current) clearTimeout(returnTimer.current);
+      if (
+        returningRef.current ||
+        (!fromQueue &&
+          (drainingQueueRef.current || queuedCharactersRef.current.length > 0))
+      ) {
+        if (fromQueue) queuedCharactersRef.current.unshift(character);
+        else queuedCharactersRef.current.push(character);
+        return;
+      }
+
+      const currentLine = linesRef.current.at(-1) ?? "";
+      const previousCharacter = currentLine.at(-1) ?? "";
+      const beginsWord =
+        character !== " " &&
+        (currentLine.length === 0 || /\s/.test(previousCharacter));
+      const columnsRemaining = CHARACTERS_PER_LINE - columnRef.current;
+      const needsGuardedReturn =
+        beginsWord &&
+        columnRef.current > 0 &&
+        columnsRemaining < WORD_START_GUARD_COLUMNS;
+      const reachedMargin = columnRef.current >= CHARACTERS_PER_LINE;
+
+      if (needsGuardedReturn || reachedMargin) {
+        // A space at the hard margin becomes the line break instead of a
+        // leading blank on the fresh line.
+        if (character !== " ") {
+          if (fromQueue) queuedCharactersRef.current.unshift(character);
+          else queuedCharactersRef.current.push(character);
+        }
+        carriageReturn();
+        return;
       }
 
       const next = [...linesRef.current];
@@ -128,7 +173,53 @@ export default function Home() {
     [carriageReturn, publishLines, strike, triggerAdvance],
   );
 
+  const drainQueuedCharacters = useCallback(() => {
+    if (returningRef.current || drainingQueueRef.current) return;
+
+    drainingQueueRef.current = true;
+
+    const playNext = () => {
+      queuedCharacterTimer.current = null;
+
+      if (returningRef.current) {
+        drainingQueueRef.current = false;
+        return;
+      }
+
+      const nextCharacter = queuedCharactersRef.current.shift();
+      if (nextCharacter === undefined) {
+        drainingQueueRef.current = false;
+        return;
+      }
+
+      typeCharacterRef.current(nextCharacter, true);
+
+      if (returningRef.current) {
+        drainingQueueRef.current = false;
+        return;
+      }
+
+      queuedCharacterTimer.current = setTimeout(
+        playNext,
+        QUEUED_CHARACTER_INTERVAL,
+      );
+    };
+
+    playNext();
+  }, []);
+
+  useEffect(() => {
+    typeCharacterRef.current = typeCharacter;
+    drainQueuedCharactersRef.current = drainQueuedCharacters;
+  }, [drainQueuedCharacters, typeCharacter]);
+
   const backspace = useCallback(() => {
+    if (queuedCharactersRef.current.length > 0) {
+      queuedCharactersRef.current.pop();
+      return;
+    }
+    if (returningRef.current) return;
+
     const next = [...linesRef.current];
     const current = next[next.length - 1];
     if (current.length === 0) return;
@@ -156,6 +247,7 @@ export default function Home() {
       for (const timer of returnSoundTimers.current) clearTimeout(timer);
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
       if (returnTimer.current) clearTimeout(returnTimer.current);
+      if (queuedCharacterTimer.current) clearTimeout(queuedCharacterTimer.current);
     };
   }, []);
 
